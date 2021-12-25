@@ -88,11 +88,11 @@ class timer {
                 double proportion = sub_time / total_time.count();
                 total_proportion -= proportion;
                 string sub_name = sub_timer_pair.second->name;
-                cout << std::left << " -> " << std::setw(10) << sub_name
+                cout << std::left << " -> " << std::setw(16) << sub_name
                      << " : " << proportion << endl;
             }
             total_proportion = max(0.0, total_proportion);
-            cout << std::left << " -> " << std::setw(10) << "other"
+            cout << std::left << " -> " << std::setw(16) << "other"
                  << " : " << total_proportion << endl;
             printf("Details: ");
             for (size_t i = 0; i < details.size(); i++) {
