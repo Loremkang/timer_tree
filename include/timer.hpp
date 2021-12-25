@@ -12,22 +12,11 @@
 using namespace std;
 using namespace std::chrono;
 
-// class timer;
-
-// static map<string, timer*> all_timers;
-// vector<timer*> all_timers;
-// set<string> all_timer_names;
-
 class timer {
    public:
     static bool active;
     static timer* current_timer;
     static timer* root_timer;
-    
-    // static string current_prefix;
-    // static string get_name_with_prefix(string _name, string _prefix = current_prefix) {
-    //     return _prefix + string(" -> ") + _name;
-    // }
 
     enum print_type { pt_full, pt_time, pt_name };
 
@@ -37,7 +26,6 @@ class timer {
     string name_with_prefix;
     duration<double> total_time;
     int count;
-    // bool active;
     high_resolution_clock::time_point start_time, end_time;
     vector<double> details;
     map<string, timer*> sub_timers;
@@ -52,7 +40,6 @@ class timer {
         }
         total_time = duration<double>();
         count = 0;
-        // active = default_active;
         details.clear();
         sub_timers.clear();
     }
@@ -74,13 +61,10 @@ class timer {
         } else {
             cout << "/----------------------------------------\\" << endl;
             cout << "Timer" << name_with_prefix << ": " << endl;
-            // printf("Average Time: %lf\n", total_time.count() / this->count);
             cout << setw(20) << "Average Time"
                  << " : " << total_time.count() / this->count << endl;
-            // printf("Total Time: %lf\n", total_time.count());
             cout << setw(20) << "Total Time"
                  << " : " << total_time.count() << endl;
-            // printf("Total Time: %lf\n", total_time.count());
             printf("Proportion: \n");
             double total_proportion = 1.0;
             for (auto& sub_timer_pair : sub_timers) {
@@ -105,7 +89,6 @@ class timer {
         fflush(stdout);
     }
 
-    // void activate(bool val) { active = val; }
     void start() { start_time = high_resolution_clock::now(); }
     void end(bool detail = false) {
         if (active) {
@@ -134,34 +117,6 @@ bool timer::active = false;
 timer* timer::current_timer = get_root_timer();
 timer* timer::root_timer = get_root_timer();
 
-// inline timer* start_timer(string name) {
-//     string name_with_prefix = timer::get_name_with_prefix(name);
-//     if (!all_timers.count(name_with_prefix)) {
-//         timer* tt = new timer(name);
-//     }
-//     timer* t = all_timers[name];
-//     t->start();
-//     return t;
-// }
-
-// template <class F>
-// inline void time_root(string basename, F f, bool detail = true) {
-//     curname = basename;
-//     cout << curname << endl;
-//     if (!all_timers.count(curname)) {
-//         timer* tt = new timer(curname);
-//         tt->reset();
-//         tt->turnon(timer_turnon);
-//     }
-//     timer* t = all_timers[curname];
-//     // t->turnon(true);
-//     t->start();
-//     f();
-//     t->end(detail);
-// }
-
-// #define INNER_TIMER (true)
-
 template <class F>
 inline void time_nested(string name, F f, bool detail = true) {
     timer* previous_timer = timer::current_timer;
@@ -176,41 +131,6 @@ inline void time_nested(string name, F f, bool detail = true) {
     t->end(detail);
     timer::current_timer = previous_timer;
 }
-
-// inline string time_nested_start(string deltaname, bool detail) {
-//     string prename = curname;
-//     curname = curname + string(" -> ") + deltaname;
-//     cout << curname << endl;
-//     if (!all_timers.count(curname)) {
-//         timer* tt = new timer(curname);
-//         tt->reset();
-//         tt->turnon(timer_turnon);
-//     }
-//     timer* t = all_timers[curname];
-//     t->start();
-//     return prename;
-// }
-
-// inline void time_nested_end(string prename, bool detail = true) {
-//     timer* t = all_timers[curname];
-//     t->end(detail);
-//     curname = prename;
-// }
-
-// template <class F>
-// inline void time_f(string name, F f, bool detail = true) {
-//     cout << name << endl;
-//     if (!all_timers.count(name)) {
-//         timer* tt = new timer(name);
-//         tt->reset();
-//         tt->turnon(timer_turnon);
-//     }
-//     timer* t = all_timers[name];
-//     t->turnon(true);
-//     t->start();
-//     f();
-//     t->end(detail);
-// }
 
 template <class F>
 inline void apply_to_timers_recursive(timer* t, F f) {
@@ -230,15 +150,3 @@ inline void reset_all_timers() {
     timer* root_timer = get_root_timer();
     apply_to_timers_recursive(root_timer, [&](timer* t) { t->reset(); });
 }
-
-// inline void delete_all_timers() {
-//     for (auto& timer : all_timers)  // access by reference to avoid copying
-//     {
-//         delete timer.second;
-//     }
-//     all_timers.clear();
-// }
-// timer send_task_timer("send_task");
-// timer receive_task_timer("receive_task");
-// timer execute_timer("execute");
-// timer exec_timer("exec");
