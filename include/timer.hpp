@@ -14,7 +14,7 @@ using namespace std::chrono;
 
 class timer {
    public:
-    static bool active;
+    static bool active, default_detail;
     static timer* current_timer;
     static timer* root_timer;
 
@@ -90,7 +90,7 @@ class timer {
     }
 
     void start() { start_time = high_resolution_clock::now(); }
-    void end(bool detail = false) {
+    void end(bool detail) {
         if (active) {
             end_time = high_resolution_clock::now();
             auto d = duration_cast<duration<double>>(end_time - start_time);
@@ -114,11 +114,12 @@ extern inline timer* get_root_timer() {
 }
 
 bool timer::active = false;
+bool timer::default_detail = true;
 timer* timer::current_timer = get_root_timer();
 timer* timer::root_timer = get_root_timer();
 
 template <class F>
-inline void time_nested(string name, F f, bool detail = true) {
+inline void time_nested(string name, F f, bool detail = timer::default_detail) {
     timer* previous_timer = timer::current_timer;
     if (!previous_timer->sub_timers.count(name)) {
         timer* tt = new timer(name, previous_timer);
