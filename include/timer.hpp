@@ -113,7 +113,7 @@ extern inline timer* get_root_timer() {
     return &root_timer;
 }
 
-bool timer::active = false;
+bool timer::active = true;
 bool timer::default_detail = true;
 timer* timer::current_timer = get_root_timer();
 timer* timer::root_timer = get_root_timer();
