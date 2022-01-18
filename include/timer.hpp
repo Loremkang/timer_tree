@@ -118,8 +118,7 @@ bool timer::default_detail = true;
 timer* timer::current_timer = get_root_timer();
 timer* timer::root_timer = get_root_timer();
 
-template <class F>
-inline void time_nested(string name, F f, bool detail = timer::default_detail) {
+inline void time_start(string name) {
     timer* previous_timer = timer::current_timer;
     if (!previous_timer->sub_timers.count(name)) {
         timer* tt = new timer(name, previous_timer);
@@ -128,9 +127,30 @@ inline void time_nested(string name, F f, bool detail = timer::default_detail) {
     timer* t = previous_timer->sub_timers[name];
     t->start();
     timer::current_timer = t;
-    f();
+}
+
+inline void time_end(string name, bool detail = timer::default_detail) {
+    timer*t = timer::current_timer;
+    assert(t == t->parent->sub_timers[name]);
     t->end(detail);
-    timer::current_timer = previous_timer;
+    timer::current_timer = t->parent;
+}
+
+template <class F>
+inline void time_nested(string name, F f, bool detail = timer::default_detail) {
+    // timer* previous_timer = timer::current_timer;
+    // if (!previous_timer->sub_timers.count(name)) {
+    //     timer* tt = new timer(name, previous_timer);
+    //     previous_timer->sub_timers[name] = tt;
+    // }
+    // timer* t = previous_timer->sub_timers[name];
+    // t->start();
+    // timer::current_timer = t;
+    time_start(name);
+    f();
+    time_end(name, detail);
+    // t->end(detail);
+    // timer::current_timer = previous_timer;
 }
 
 template <class F>
