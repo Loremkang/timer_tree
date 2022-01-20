@@ -68,12 +68,16 @@ class timer {
             printf("Proportion: \n");
             double total_proportion = 1.0;
             for (auto& sub_timer_pair : sub_timers) {
-                double sub_time = sub_timer_pair.second->total_time.count();
+                auto sub_timer = sub_timer_pair.second;
+                double sub_time = sub_timer->total_time.count();
+                double sub_average_time = sub_time / sub_timer->count;
                 double proportion = sub_time / total_time.count();
                 total_proportion -= proportion;
+                int proportion_int = (int)(proportion * 100.0);
+
                 string sub_name = sub_timer_pair.second->name;
                 cout << std::left << " -> " << std::setw(16) << sub_name
-                     << " : " << proportion << endl;
+                     << " : " << std::setw(3) << proportion_int << "%" << " : " << sub_average_time << endl;
             }
             total_proportion = max(0.0, total_proportion);
             cout << std::left << " -> " << std::setw(16) << "other"
