@@ -80,8 +80,9 @@ class timer {
                      << " : " << std::setw(3) << proportion_int << "%" << " : " << sub_average_time << endl;
             }
             total_proportion = max(0.0, total_proportion);
+            int total_proportion_int = (int)(total_proportion * 100.0);
             cout << std::left << " -> " << std::setw(16) << "other"
-                 << " : " << total_proportion << endl;
+                 << " : " << std::setw(3) << total_proportion_int << "%" << endl;
             printf("Details: ");
             for (size_t i = 0; i < details.size(); i++) {
                 printf("%lf ", details[i]);
