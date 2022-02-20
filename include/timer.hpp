@@ -14,7 +14,7 @@ using namespace std::chrono;
 
 class timer {
    public:
-    static bool active, default_detail;
+    static bool active, default_detail, print_when_time;
     static timer* current_timer;
     static timer* root_timer;
 
@@ -120,6 +120,7 @@ extern inline timer* get_root_timer() {
 
 bool timer::active = true;
 bool timer::default_detail = true;
+bool timer::print_when_time = false;
 timer* timer::current_timer = get_root_timer();
 timer* timer::root_timer = get_root_timer();
 
@@ -130,12 +131,15 @@ inline void time_start(string name) {
         previous_timer->sub_timers[name] = tt;
     }
     timer* t = previous_timer->sub_timers[name];
+    if (timer::print_when_time) {
+        t->print(timer::print_type::pt_name);
+    }
     t->start();
     timer::current_timer = t;
 }
 
 inline void time_end(string name, bool detail = timer::default_detail) {
-    timer*t = timer::current_timer;
+    timer* t = timer::current_timer;
     assert(t == t->parent->sub_timers[name]);
     t->end(detail);
     timer::current_timer = t->parent;
