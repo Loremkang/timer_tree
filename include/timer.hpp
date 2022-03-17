@@ -9,14 +9,20 @@
 #include <vector>
 #include <cassert>
 #include <iomanip>
+#include <mutex>
+#include <atomic>
 using namespace std;
 using namespace std::chrono;
 
 class timer {
    public:
-    static bool active, default_detail, print_when_time;
-    static timer* current_timer;
-    static timer* root_timer;
+    inline static bool active = true;
+    inline static bool default_detail = true;
+    inline static bool print_when_time = true;
+    inline static vector<timer*> all_timers;
+    inline static mutex mut;
+    inline static thread_local timer* current_timer = nullptr;
+    inline static thread_local timer* root_timer = nullptr;
 
     enum print_type { pt_full, pt_time, pt_name };
 
@@ -114,17 +120,32 @@ class timer {
 };
 
 extern inline timer* get_root_timer() {
-    static timer root_timer("", nullptr);
-    return &root_timer;
+    if (timer::root_timer != nullptr) {
+        return timer::root_timer;
+    }
+    timer* rt = new timer("", nullptr);
+    // static thread_local timer root_timer("", nullptr);
+    timer::root_timer = rt;
+    timer::mut.lock();
+    timer::all_timers.push_back(rt);
+    timer::mut.unlock();
+    return rt;
 }
 
-bool timer::active = true;
-bool timer::default_detail = true;
-bool timer::print_when_time = false;
-timer* timer::current_timer = get_root_timer();
-timer* timer::root_timer = get_root_timer();
+// bool timer::active = true;
+// bool timer::default_detail = true;
+// bool timer::print_when_time = false;
+// thread_local timer* timer::current_timer = get_root_timer();
+// thread_local timer* timer::root_timer = get_root_timer();
+
+inline void check_init_timer() {
+    if (timer::root_timer == nullptr) {
+        timer::current_timer = timer::root_timer = get_root_timer();
+    }
+}
 
 inline void time_start(string name) {
+    check_init_timer();
     timer* previous_timer = timer::current_timer;
     if (!previous_timer->sub_timers.count(name)) {
         timer* tt = new timer(name, previous_timer);
@@ -139,6 +160,7 @@ inline void time_start(string name) {
 }
 
 inline void time_end(string name, bool detail = timer::default_detail) {
+    check_init_timer();
     timer* t = timer::current_timer;
     assert(t == t->parent->sub_timers[name]);
     t->end(detail);
@@ -147,36 +169,36 @@ inline void time_end(string name, bool detail = timer::default_detail) {
 
 template <class F>
 inline void time_nested(string name, F f, bool detail = timer::default_detail) {
-    // timer* previous_timer = timer::current_timer;
-    // if (!previous_timer->sub_timers.count(name)) {
-    //     timer* tt = new timer(name, previous_timer);
-    //     previous_timer->sub_timers[name] = tt;
-    // }
-    // timer* t = previous_timer->sub_timers[name];
-    // t->start();
-    // timer::current_timer = t;
+    check_init_timer();
     time_start(name);
     f();
     time_end(name, detail);
-    // t->end(detail);
-    // timer::current_timer = previous_timer;
 }
 
 template <class F>
-inline void apply_to_timers_recursive(timer* t, F f) {
+inline void apply_to_timer_tree(timer* t, F f) {
     assert(t != nullptr);
     f(t);
     for (auto& timer : t->sub_timers) {
-        apply_to_timers_recursive(timer.second, f);
+        apply_to_timer_tree(timer.second, f);
+    }
+}
+
+template <class F>
+inline void apply_to_timers_recursive(F f) {
+    cout<<"timer count: "<<timer::all_timers.size()<<endl;
+    int id = 0;
+    for (auto t : timer::all_timers) {
+        cout<<"Timer "<<id<<": "<<endl;
+        apply_to_timer_tree(t, f);
+        id ++;
     }
 }
 
 inline void print_all_timers(timer::print_type pt) {
-    timer* root_timer = get_root_timer();
-    apply_to_timers_recursive(root_timer, [&](timer* t) { t->print(pt); });
+    apply_to_timers_recursive([&](timer* t) { t->print(pt); });
 }
 
 inline void reset_all_timers() {
-    timer* root_timer = get_root_timer();
-    apply_to_timers_recursive(root_timer, [&](timer* t) { t->reset(); });
+    apply_to_timers_recursive([&](timer* t) { t->reset(); });
 }
