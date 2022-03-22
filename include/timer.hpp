@@ -169,7 +169,6 @@ inline void time_end(string name, bool detail = timer::default_detail) {
 
 template <class F>
 inline void time_nested(string name, F f, bool detail = timer::default_detail) {
-    check_init_timer();
     time_start(name);
     f();
     time_end(name, detail);
@@ -199,6 +198,46 @@ inline void print_all_timers(timer::print_type pt) {
     apply_to_timers_recursive([&](timer* t) { t->print(pt); });
 }
 
+inline void print_all_timers_average() {
+    map<string, pair<int, double>> name_to_count_tottime;
+    apply_to_timers_recursive([&](timer* t) {
+        string name = t->name_with_prefix;
+        double total_time = t->total_time.count();
+        int cnt = t->count;
+        if (name_to_count_tottime.count(name) > 0) {
+            auto p = name_to_count_tottime[name];
+            name_to_count_tottime[name] = make_pair(p.first + cnt, p.second + total_time);
+        } else {
+            name_to_count_tottime[name] = make_pair(cnt, total_time);
+        }
+    });
+    cout<<endl;
+    cout<<"Names:"<<endl;
+    for (auto t : name_to_count_tottime) {
+        if (t.second.first == 0) continue;
+        cout<<t.first<<endl;
+    }
+    cout<<endl;
+    cout<<"Occurences:"<<endl;
+    for (auto t : name_to_count_tottime) {
+        if (t.second.first == 0) continue;
+        cout<<t.second.first<<endl;
+    }
+    cout<<endl;
+    cout<<"Total Time:"<<endl;
+    for (auto t : name_to_count_tottime) {
+        if (t.second.first == 0) continue;
+        cout<<t.second.second<<endl;
+    }
+    cout<<endl;
+    cout<<"Average Time:"<<endl;
+    for (auto t : name_to_count_tottime) {
+        if (t.second.first == 0) continue;
+        cout<<t.second.second / t.second.first<<endl;
+    }
+}
+
 inline void reset_all_timers() {
     apply_to_timers_recursive([&](timer* t) { t->reset(); });
 }
+

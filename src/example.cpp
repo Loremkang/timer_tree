@@ -32,12 +32,12 @@ inline void test() {
 int main() {
     int tid = 0;
     vector<thread> spawned_threads;
-    static thread_local int thread_id = 0;
-    static atomic<int> finished = 0;
-    static atomic<bool> stop = false;
+    thread_local int thread_id = 0;
+    atomic<int> finished = 0;
+    atomic<bool> stop = false;
+
     for (int i = 1; i < 4; i ++) {
         spawned_threads.emplace_back([&, i]() {
-            init_timer();
             thread_id = i;  // thread-local write
             test();
             finished++;
@@ -46,6 +46,7 @@ int main() {
                     this_thread::sleep_for(chrono::microseconds(100));
                 }
                 print_all_timers(timer::print_type::pt_full);
+                print_all_timers_average();
             }
         });
     }
