@@ -45,7 +45,7 @@ int main() {
                 while (finished < 3) {
                     this_thread::sleep_for(chrono::microseconds(100));
                 }
-                print_all_timers(timer::print_type::pt_full);
+                print_all_timers(print_type::pt_full);
                 print_all_timers_average();
             }
         });

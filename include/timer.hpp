@@ -14,6 +14,8 @@
 using namespace std;
 using namespace std::chrono;
 
+enum print_type { pt_full, pt_time, pt_name };
+
 class timer {
    public:
     inline static bool active = true;
@@ -23,8 +25,6 @@ class timer {
     inline static mutex mut;
     inline static thread_local timer* current_timer = nullptr;
     inline static thread_local timer* root_timer = nullptr;
-
-    enum print_type { pt_full, pt_time, pt_name };
 
     string name;
     timer* parent;
@@ -153,7 +153,7 @@ inline void time_start(string name) {
     }
     timer* t = previous_timer->sub_timers[name];
     if (timer::print_when_time) {
-        t->print(timer::print_type::pt_name);
+        t->print(print_type::pt_name);
     }
     t->start();
     timer::current_timer = t;
@@ -194,7 +194,7 @@ inline void apply_to_timers_recursive(F f) {
     }
 }
 
-inline void print_all_timers(timer::print_type pt) {
+inline void print_all_timers(print_type pt) {
     apply_to_timers_recursive([&](timer* t) { t->print(pt); });
 }
 
@@ -241,3 +241,85 @@ inline void reset_all_timers() {
     apply_to_timers_recursive([&](timer* t) { t->reset(); });
 }
 
+class coverage_timer {
+    high_resolution_clock::time_point last_active_time, last_inactive_time;
+    double active_time, inactive_time;
+    int count;
+    bool init_state;
+    mutex mut;
+    string name;
+    // vector<double> active_times, inactive_times;
+
+   public:
+    coverage_timer(string _name) {
+        name = _name;
+        reset();
+    }
+
+    void start() {
+        unique_lock wLock(mut);
+        if (count == 0) {
+            auto current_time = high_resolution_clock::now();
+            if (!init_state) {
+                double d = duration_cast<duration<double>>(current_time -
+                                                         last_inactive_time)
+                             .count();
+                inactive_time += d;
+                // inactive_times.push_back(d);
+            }
+            last_active_time = current_time;
+        }
+        init_state = false;
+        count++;
+    }
+
+    void end() {
+        unique_lock wLock(mut);
+        assert(count > 0);
+        count--;
+        if (count == 0) {
+            auto current_time = high_resolution_clock::now();
+            double d =
+                duration_cast<duration<double>>(current_time - last_active_time)
+                    .count();
+            active_time += d;
+            // active_times.push_back(d);
+            last_inactive_time = current_time;
+        }
+    }
+
+    void print_vector(vector<double>& x) {
+        for (int i = 0; i < x.size(); i ++) {
+            printf("%d %lf\n", i, x[i]);
+        }
+    }
+
+    void print(print_type pt) {
+        unique_lock wLock(mut);
+        assert(count == 0);
+        if (pt == pt_name) {
+            cout << name << endl;
+        } else {
+            printf("%s:\n", name.c_str());
+            printf("Active Time: %lf\n", active_time);
+            printf("Inactive Time: %lf\n", inactive_time);
+            printf("Active Ratio: %lf\n",
+                   active_time / (active_time + inactive_time));
+            // printf("Active Times:\n");
+            // print_vector(active_times);
+            // printf("Inactive Times:\n");
+            // print_vector(inactive_times);
+        }
+    }
+
+    void reset() {
+        active_time = inactive_time = 0;
+        count = 0;
+        init_state = true;
+        // active_times.clear();
+        // inactive_times.clear();
+    }
+};
+
+coverage_timer* cpu_coverage_timer = new coverage_timer("CPU coverage timer");
+coverage_timer* pim_coverage_timer = new coverage_timer("PIM coverage timer");
