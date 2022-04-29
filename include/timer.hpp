@@ -153,7 +153,8 @@ inline void time_start(string name) {
     }
     timer* t = previous_timer->sub_timers[name];
     if (timer::print_when_time) {
-        t->print(print_type::pt_name);
+        cout<<t->name_with_prefix<<endl;
+        // t->print(print_type::pt_name);
     }
     t->start();
     timer::current_timer = t;
