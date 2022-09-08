@@ -213,25 +213,25 @@ inline void print_all_timers_average() {
         }
     });
     cout<<endl;
-    cout<<"Names:"<<endl;
+    cout<<"Pipeline Names:"<<endl;
     for (auto t : name_to_count_tottime) {
         if (t.second.first == 0) continue;
         cout<<t.first<<endl;
     }
     cout<<endl;
-    cout<<"Occurences:"<<endl;
+    cout<<"Pipeline Occurences:"<<endl;
     for (auto t : name_to_count_tottime) {
         if (t.second.first == 0) continue;
         cout<<t.second.first<<endl;
     }
     cout<<endl;
-    cout<<"Total Time:"<<endl;
+    cout<<"Pipeline Total Time:"<<endl;
     for (auto t : name_to_count_tottime) {
         if (t.second.first == 0) continue;
         cout<<t.second.second<<endl;
     }
     cout<<endl;
-    cout<<"Average Time:"<<endl;
+    cout<<"Pipeline Average Time:"<<endl;
     for (auto t : name_to_count_tottime) {
         if (t.second.first == 0) continue;
         cout<<t.second.second / t.second.first<<endl;
