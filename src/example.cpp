@@ -2,15 +2,15 @@
 #include <iostream>
 #include <thread>
 #include <vector>
-using namespace std;
+#include <atomic>
 
 int f(int loop) {
     for (int i = 0; i < loop; i ++) {
         time_nested("10ms", [&]() {
-            this_thread::sleep_for(chrono::milliseconds(10));
+            std::this_thread::sleep_for(std::chrono::milliseconds(rand() % 10));
         });
         time_nested("y", [&]() {
-            this_thread::sleep_for(chrono::milliseconds(1));
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
         });
     }
     return 0;
@@ -31,27 +31,30 @@ inline void test() {
 
 int main() {
     int tid = 0;
-    vector<thread> spawned_threads;
+    std::vector<std::thread> spawned_threads;
     thread_local int thread_id = 0;
-    atomic<int> finished = 0;
-    atomic<bool> stop = false;
 
-    for (int i = 1; i < 4; i ++) {
-        spawned_threads.emplace_back([&, i]() {
-            thread_id = i;  // thread-local write
-            test();
-            finished++;
-            if (thread_id == 1) {
-                while (finished < 3) {
-                    this_thread::sleep_for(chrono::microseconds(100));
-                }
-                print_all_timers(print_type::pt_full);
-                print_all_timers_average();
-            }
-        });
-    }
-    for (int i = 1; i < 4; i++) {
-        spawned_threads[i - 1].join();
-    }
+    init_root_timer();
+    timer::active = true;
+    timer::default_detail = true;
+    timer::print_when_time = true;
+
+    time_nested_pass("main", [&](timer* timer) {
+        for (int i = 1; i < 4; i ++) {
+            spawned_threads.emplace_back([&, i]() {
+                thread_id = i;  // thread-local write
+                time_nested<true>("thread " + std::to_string(i), [&]() {
+                    test();
+                }, timer);
+            });
+        }
+        for (int i = 1; i < 4; i++) {
+            spawned_threads[i - 1].join();
+        }
+    });
+
+    timer::active = false;
+    print_all_timers(print_type::pt_full);
+
     return 0;
 }
