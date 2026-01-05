@@ -114,10 +114,12 @@ class timer {
     }
 
     void start() { 
+        assert(timer::active);
         assert(tid == std::this_thread::get_id());
         start_time = std::chrono::high_resolution_clock::now();
     }
     void end(bool detail) {
+        assert(timer::active);
         assert(tid == std::this_thread::get_id());
         if (active) {
             end_time = std::chrono::high_resolution_clock::now();
@@ -160,7 +162,7 @@ inline timer* time_start(std::string name, timer* parent) {
         previous_timer = timer::current_timer;
     }
 
-    if (concurrent) {
+    if constexpr (concurrent) {
         if (!previous_timer->mut) {
             previous_timer->mut = new std::mutex();
         }
@@ -171,7 +173,7 @@ inline timer* time_start(std::string name, timer* parent) {
         previous_timer->sub_timers[name] = tt;
     }
     timer* t = previous_timer->sub_timers[name];
-    if (concurrent) {
+    if constexpr (concurrent) {
         previous_timer->mut->unlock();
     }
 
@@ -192,12 +194,12 @@ inline void time_end(std::string name, bool detail = timer::default_detail) {
     timer* t = timer::current_timer;
 
 #ifndef NDEBUG
-    if (concurrent) {
+    if constexpr (concurrent) {
         assert(t->parent->mut);
         t->parent->mut->lock();
     }
     assert(t == t->parent->sub_timers[name]);
-    if (concurrent) {
+    if constexpr (concurrent) {
         t->parent->mut->unlock();
     }
 #endif
@@ -210,9 +212,13 @@ inline void time_end(std::string name, bool detail = timer::default_detail) {
 template <bool concurrent = false, class F>
 inline void time_nested(std::string name, F f, timer* parent = nullptr, bool detail = timer::default_detail) {
     time_start<concurrent>(name, parent);
-    if (!concurrent && timer::current_timer->parent != nullptr) {
-        assert(timer::current_timer->parent->tid == std::this_thread::get_id());
+#ifndef NDEBUG
+    if constexpr(!concurrent) {
+        if (timer::current_timer->parent != nullptr) {
+            assert(timer::current_timer->parent->tid == std::this_thread::get_id());
+        }
     }
+#endif
     f();
     time_end<concurrent>(name, detail);
 }
